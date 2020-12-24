@@ -1,4 +1,4 @@
-package cache
+package lru
 
 import "container/list"
 
@@ -7,7 +7,7 @@ import "container/list"
 // nbytes indicate the current used storage.
 // ll is a two-wat linked list to store all data.
 // cache is a map for getting data in linked list, cache's value is the pointer of ll.Element
-// OnEvicted is a handler for node being evicted, and it can be nil.
+// OnEvicted is a handler for node being evicted which can be nil.
 type Cache struct {
 	maxBytes int64
 	nbytes   int64
@@ -67,6 +67,7 @@ func (c *Cache) Add(key string, value Value) {
 		// 节点已经存在
 		c.ll.MoveToFront(ele)
 		kv := ele.Value.(*entry)
+		// 节点可能出现变化
 		c.nbytes += int64(value.Len()) - int64(kv.value.Len())
 		kv.value = value
 	} else {
@@ -75,7 +76,13 @@ func (c *Cache) Add(key string, value Value) {
 		c.cache[key] = ele
 		c.nbytes += int64(len(key)) + int64(value.Len())
 	}
+	// 缓存满，删除队首使用频率最低的节点
 	for c.maxBytes != 0 && c.maxBytes < c.nbytes {
 		c.RemoveOldest()
 	}
+}
+
+// Len the number of cache entries, test only
+func (c *Cache) Len() int {
+	return c.ll.Len()
 }
