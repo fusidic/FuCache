@@ -41,12 +41,13 @@ func (p *Pool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	p.Log("%s %s", r.Method, r.URL.Path)
 	// /<basePath>/<groupName>/<key> required
-	parts := strings.SplitN(r.URL.Path[len(p.basePath):], "/", 2)
+	parts := strings.SplitN(r.URL.Path[len(p.basePath)+1:], "/", 2)
 	if len(parts) != 2 {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
+	// log.Printf("[parse path] 1:%v 2:%v", parts[1], parts[2])
 	groupName := parts[0]
 	key := parts[1]
 	group := memcache.GetGroup(groupName)
