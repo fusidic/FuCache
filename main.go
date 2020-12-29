@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/fusidic/FuCache/pkg/cacheserver"
 	"github.com/fusidic/FuCache/pkg/groupcache"
-	"github.com/fusidic/FuCache/pkg/grouphttp"
 )
 
 var db = map[string]string{
@@ -29,7 +29,7 @@ func createGroup() *groupcache.Group {
 
 // 开启本地节点服务，并将地址填入 Pool，注册到 Group 中
 func startCacheServer(addr string, addrs []string, group *groupcache.Group) {
-	peers := grouphttp.NewPool(addr)
+	peers := cacheserver.NewPool(addr)
 	peers.Set(addrs...)
 	// Pool 中有 PickPeer 实现
 	group.RegisterPeers(peers)

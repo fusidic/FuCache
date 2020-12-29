@@ -96,6 +96,8 @@ func (g *Group) load(key string) (value ByteView, err error) {
 			log.Println("[GroupCache] Failed to get from peer", err)
 		}
 	}
+
+	// 此处逻辑感觉有些不对
 	return g.getLocally(key)
 }
 
