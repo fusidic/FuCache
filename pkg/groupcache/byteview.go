@@ -1,4 +1,4 @@
-package memcache
+package groupcache
 
 // ByteView holds an immutable view of bytes.
 // 提供字节形式的存储，可以兼容多种数据源（文本、图片等）

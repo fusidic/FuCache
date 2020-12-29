@@ -1,4 +1,4 @@
-package memcache
+package groupcache
 
 import (
 	"sync"
@@ -9,7 +9,7 @@ import (
 type cache struct {
 	mu         sync.Mutex
 	lru        *lru.Cache
-	cacheBytes int64
+	cacheBytes int64 // 缓存容量
 }
 
 func (c *cache) add(key string, value ByteView) {

@@ -49,7 +49,7 @@ func (m *Map) Add(keys ...string) {
 	sort.Ints(m.keys)
 }
 
-// Get gets the closest item in the hash to the provided key.
+// Get the closest Node in the hash-ring provided key.
 func (m *Map) Get(key string) string {
 	if len(m.keys) == 0 {
 		return ""
@@ -64,5 +64,6 @@ func (m *Map) Get(key string) string {
 	})
 
 	// 获取真实节点的名称
+	// 取余是为了处理 idx == len(m.keys) 的情况，即keys数组的最后一位
 	return m.hashMap[m.keys[idx%len(m.keys)]]
 }
