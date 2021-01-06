@@ -19,7 +19,7 @@ var db = map[string]string{
 func createGroup() *groupcache.Group {
 	return groupcache.NewGroup("scores", 2<<10, groupcache.GetterFunc(
 		func(key string) ([]byte, error) {
-			log.Println("[SlowDB] search key", key)
+			log.Println("[mainDB] search key", key)
 			if v, ok := db[key]; ok {
 				return []byte(v), nil
 			}
@@ -29,12 +29,12 @@ func createGroup() *groupcache.Group {
 
 // 开启本地节点服务，并将地址填入 Pool，注册到 Group 中
 func startCacheServer(addr string, addrs []string, group *groupcache.Group) {
-	peers := cacheserver.NewPool(addr)
-	peers.Set(addrs...)
+	node := cacheserver.NewPool(addr)
+	node.Set(addrs...)
 	// Pool 中有 PickPeer 实现
-	group.RegisterPeers(peers)
+	group.RegisterPeers(node)
 	log.Println("groupcache is running at ", addr)
-	log.Fatal(http.ListenAndServe(addr[7:], peers))
+	log.Fatal(http.ListenAndServe(addr[7:], node))
 }
 
 // 用户访问端口
@@ -68,6 +68,7 @@ func main() {
 		8003: "http://localhost:8003",
 	}
 
+	// Peer nodes
 	var addrs []string
 	for _, v := range addrMap {
 		addrs = append(addrs, v)

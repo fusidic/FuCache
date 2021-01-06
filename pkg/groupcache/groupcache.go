@@ -89,6 +89,7 @@ func (g *Group) RegisterPeers(peers PeerPicker) {
 // 单机环境下，会从数据源中回调；分布式环境下，会从其他节点中回调
 func (g *Group) load(key string) (value ByteView, err error) {
 	if g.peers != nil {
+		// 根据哈希，选择远程节点
 		if peer, ok := g.peers.PickPeer(key); ok {
 			if value, err = g.getFromPeer(peer, key); err == nil {
 				return value, nil
@@ -104,6 +105,10 @@ func (g *Group) load(key string) (value ByteView, err error) {
 func (g *Group) getFromPeer(peer PeerGetter, key string) (ByteView, error) {
 	bytes, err := peer.Get(g.name, key)
 	if err != nil {
+		// log.Printf("[Server] Not exist, loading ...")
+		// g.getLocally(key)
+		// bytes, _ := peer.Get(g.name, key)
+		// return ByteView{b: bytes}, nil
 		return ByteView{}, err
 	}
 	return ByteView{b: bytes}, nil

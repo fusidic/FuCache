@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	defaultBasePath = "/_groupcache"
-	defaultReplicas = 50
+	defaultServerPath = "/_groupcache"
+	defaultReplicas   = 50
 )
 
 // Pool implements PeerPicker for a pool of HTTP peers.
@@ -24,11 +24,11 @@ const (
 //   即用于节点间的访问
 type Pool struct {
 	// peer's base URL, e.g. "https://example.net:8000"
-	self     string
-	basePath string
+	self     string // 记录自己的地址，包括主机名/IP和端口
+	basePath string // Path 前缀，用作区分服务
 	mu       sync.Mutex
 	// consistenthash 中关于 hash、寻址的实现
-	peers *consistenthash.Map
+	cacheNodes *consistenthash.Map
 	// 各节点名:地址
 	httpGetter map[string]*httpGetter
 }
@@ -37,7 +37,7 @@ type Pool struct {
 func NewPool(self string) *Pool {
 	return &Pool{
 		self:     self,
-		basePath: defaultBasePath,
+		basePath: defaultServerPath,
 	}
 }
 
@@ -86,6 +86,7 @@ type httpGetter struct {
 
 // Get implements method Get in interface grouphttp.PeerGetter
 func (h *httpGetter) Get(group string, key string) ([]byte, error) {
+	// 生成完整的 URL
 	u := fmt.Sprintf(
 		"%v%v/%v",
 		h.baseURL,
@@ -110,17 +111,18 @@ func (h *httpGetter) Get(group string, key string) ([]byte, error) {
 	return bytes, nil
 }
 
+// 仅传方法过去, 等号后为类型转换
 var _ groupcache.PeerGetter = (*httpGetter)(nil)
 
 // Set updates the pool's list of peers(expect host addresses), which implements peers.PeerPicker interface.
-func (p *Pool) Set(peers ...string) {
+func (p *Pool) Set(nodes ...string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.peers = consistenthash.New(defaultReplicas, nil)
-	p.peers.Add(peers...)
-	p.httpGetter = make(map[string]*httpGetter, len(peers))
-	for _, peer := range peers {
-		p.httpGetter[peer] = &httpGetter{baseURL: peer + p.basePath}
+	p.cacheNodes = consistenthash.New(defaultReplicas, nil)
+	p.cacheNodes.Add(nodes...)
+	p.httpGetter = make(map[string]*httpGetter, len(nodes))
+	for _, node := range nodes {
+		p.httpGetter[node] = &httpGetter{baseURL: node + p.basePath}
 	}
 }
 
@@ -128,12 +130,9 @@ func (p *Pool) Set(peers ...string) {
 func (p *Pool) PickPeer(key string) (groupcache.PeerGetter, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if peer := p.peers.Get(key); peer != "" && peer != p.self {
+	if peer := p.cacheNodes.Get(key); peer != "" && peer != p.self {
 		p.Log("Pick peer %s", peer)
 		return p.httpGetter[peer], true
 	}
 	return nil, false
 }
-
-// 仅传方法过去
-var _ groupcache.PeerPicker = (*Pool)(nil)
