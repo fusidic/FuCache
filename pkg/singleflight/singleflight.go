@@ -23,10 +23,11 @@ func (g *Group) Do(key string, fn func() (interface{}, error)) (interface{}, err
 		g.m = make(map[string]*call)
 	}
 	if c, ok := g.m[key]; ok {
-		g.mu.Unlock()
-		c.wg.Wait() // 如果请求正在进行，则等待
+		g.mu.Unlock() // 释放 group 锁，其他 key 可以正常读取了
+		c.wg.Wait()   // 如果请求正在进行，则等待
 		return c.val, c.err
 	}
+	// 首次请求该 key
 	c := new(call)
 	c.wg.Add(1)  // 发起请求前加锁
 	g.m[key] = c // 添加到 g.m，表明 key 已经有对应的请求在处理
@@ -36,7 +37,7 @@ func (g *Group) Do(key string, fn func() (interface{}, error)) (interface{}, err
 	c.wg.Done()
 
 	g.mu.Lock()
-	delete(g.m, key)
+	delete(g.m, key) // 回收资源
 	g.mu.Unlock()
 
 	return c.val, c.err

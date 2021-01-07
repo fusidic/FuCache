@@ -1,5 +1,7 @@
 package groupcache
 
+import "github.com/fusidic/FuCache/proto/cachepb"
+
 // PeerPicker is the interface that must be implemented to
 // locate the peer that owns a specific key
 type PeerPicker interface {
@@ -10,5 +12,7 @@ type PeerPicker interface {
 // PeerGetter is the interface that must be implemented by a peer.
 type PeerGetter interface {
 	// 从对应 group 中查找缓存值
-	Get(group string, key string) ([]byte, error)
+	// Get(group string, key string) ([]byte, error)
+	// protobuf
+	Get(in *cachepb.Request, out *cachepb.Response) error
 }
